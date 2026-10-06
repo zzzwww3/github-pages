@@ -1,0 +1,27 @@
+{
+  "id": "./",
+  "name": "밤의 시계",
+  "short_name": "밤의 시계",
+  "description": "화면을 켜 두고 볼 수 있는 iPhone용 실시간 시계",
+  "lang": "ko-KR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#101C2C",
+  "theme_color": "#101C2C",
+  "icons": [
+    {
+      "src": "./icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
