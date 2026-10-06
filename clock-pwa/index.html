@@ -137,6 +137,8 @@
       let wakeLock = null;
       const wakeLockSupported = Boolean(navigator.wakeLock?.request);
       let wakeRequestPending = false;
+      let wakeRetryTimer = null;
+      let wakeRetryDelay = 5000;
 
       function updateClock() {
         const now = new Date();
@@ -153,6 +155,31 @@
         appStatus.textContent = message;
       }
 
+      function clearWakeRetry() {
+        if (wakeRetryTimer !== null) {
+          window.clearTimeout(wakeRetryTimer);
+          wakeRetryTimer = null;
+        }
+      }
+
+      function scheduleWakeRetry(delay = wakeRetryDelay) {
+        if (
+          !wakeLockSupported ||
+          document.visibilityState !== "visible" ||
+          wakeLock ||
+          wakeRequestPending ||
+          wakeRetryTimer !== null
+        ) {
+          return;
+        }
+
+        wakeRetryTimer = window.setTimeout(() => {
+          wakeRetryTimer = null;
+          void requestWakeLock();
+        }, delay);
+        wakeRetryDelay = Math.min(wakeRetryDelay * 2, 60000);
+      }
+
       async function requestWakeLock() {
         if (
           !wakeLockSupported ||
@@ -163,6 +190,7 @@
           return;
         }
 
+        clearWakeRetry();
         wakeRequestPending = true;
         try {
           const sentinel = await navigator.wakeLock.request("screen");
@@ -172,6 +200,7 @@
           }
 
           wakeLock = sentinel;
+          wakeRetryDelay = 5000;
           setWakeStatus("화면이 계속 켜져 있어요.");
           sentinel.addEventListener("release", () => {
             if (wakeLock === sentinel) {
@@ -179,6 +208,7 @@
             }
             if (document.visibilityState === "visible") {
               setWakeStatus("화면 유지가 중단됐어요. 화면을 다시 열면 자동으로 재시도합니다.");
+              scheduleWakeRetry(1500);
             }
           }, { once: true });
         } catch (error) {
@@ -191,6 +221,9 @@
           );
         } finally {
           wakeRequestPending = false;
+          if (wakeLockSupported && document.visibilityState === "visible" && !wakeLock) {
+            scheduleWakeRetry();
+          }
         }
       }
 
@@ -205,9 +238,17 @@
 
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
+          clearWakeRetry();
           void requestWakeLock();
         }
       });
+
+      document.addEventListener("pointerdown", () => {
+        if (!wakeLock) {
+          clearWakeRetry();
+          void requestWakeLock();
+        }
+      }, { passive: true });
 
       if (!("serviceWorker" in navigator)) {
         setWakeStatus("이 브라우저에서는 오프라인 저장을 사용할 수 없어요.");
