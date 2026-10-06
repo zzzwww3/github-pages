@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#101C2C">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="밤의 시계">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link rel="icon" href="./icon.svg" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="./icon-180.png">
+    <title>밤의 시계</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        --night: #101c2c;
+        --light: #dde7ec;
+        --steel: #8ea2b0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        min-width: 280px;
+        min-height: 100vh;
+        min-height: 100svh;
+        margin: 0;
+        background: var(--night);
+        color: var(--light);
+      }
+
+      .clock-app {
+        display: grid;
+        min-height: 100vh;
+        min-height: 100svh;
+        align-content: center;
+        justify-items: center;
+        padding:
+          calc(env(safe-area-inset-top, 0px) + 1.25rem)
+          max(1.4rem, env(safe-area-inset-right, 0px))
+          calc(env(safe-area-inset-bottom, 0px) + 1.25rem)
+          max(1.4rem, env(safe-area-inset-left, 0px));
+      }
+
+      .clock-stage {
+        display: grid;
+        justify-items: center;
+        gap: 1.25rem;
+        text-align: center;
+      }
+
+      .calendar-date {
+        margin: 0;
+        color: var(--steel);
+        font-size: clamp(1rem, 4.2vw, 1.25rem);
+        font-weight: 450;
+        letter-spacing: 0.015em;
+      }
+
+      .clock-time,
+      .clock-seconds {
+        font-size: clamp(4rem, 20vw, 9rem);
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .clock-time {
+        font-weight: 360;
+        letter-spacing: -0.075em;
+        line-height: 0.98;
+      }
+
+      .time-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        max-width: 100%;
+      }
+
+      .screen-reader-status {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      @media (max-height: 560px) and (orientation: landscape) {
+        .clock-time,
+        .clock-seconds {
+          font-size: clamp(4.2rem, 17vw, 7rem);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="clock-app">
+      <main class="clock-stage">
+        <p class="calendar-date" id="calendar-date"></p>
+        <div class="time-row">
+          <time class="clock-time" id="clock-time"></time>
+          <span class="clock-seconds" id="clock-seconds"></span>
+        </div>
+      </main>
+      <p class="screen-reader-status" id="app-status" role="status" aria-live="polite"></p>
+    </div>
+
+    <script>
+      const clockTime = document.querySelector("#clock-time");
+      const clockSeconds = document.querySelector("#clock-seconds");
+      const calendarDate = document.querySelector("#calendar-date");
+      const appStatus = document.querySelector("#app-status");
+      const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+      });
+      const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        weekday: "long"
+      });
+
+      let wakeLock = null;
+      const wakeLockSupported = Boolean(navigator.wakeLock?.request);
+      let wakeRequestPending = false;
+
+      function updateClock() {
+        const now = new Date();
+
+        clockTime.dateTime = now.toISOString();
+        clockTime.textContent = timeFormatter.format(now);
+        clockSeconds.textContent = `:${String(now.getSeconds()).padStart(2, "0")}`;
+        calendarDate.textContent = dateFormatter.format(now);
+
+        window.setTimeout(updateClock, 1000 - (Date.now() % 1000));
+      }
+
+      function setWakeStatus(message) {
+        appStatus.textContent = message;
+      }
+
+      async function requestWakeLock() {
+        if (
+          !wakeLockSupported ||
+          document.visibilityState !== "visible" ||
+          wakeLock ||
+          wakeRequestPending
+        ) {
+          return;
+        }
+
+        wakeRequestPending = true;
+        try {
+          const sentinel = await navigator.wakeLock.request("screen");
+          if (document.visibilityState !== "visible") {
+            await sentinel.release();
+            return;
+          }
+
+          wakeLock = sentinel;
+          setWakeStatus("화면이 계속 켜져 있어요.");
+          sentinel.addEventListener("release", () => {
+            if (wakeLock === sentinel) {
+              wakeLock = null;
+            }
+            if (document.visibilityState === "visible") {
+              setWakeStatus("화면 유지가 중단됐어요. 화면을 다시 열면 자동으로 재시도합니다.");
+            }
+          }, { once: true });
+        } catch (error) {
+          console.error("화면 유지 요청에 실패했습니다.", error);
+          wakeLock = null;
+          setWakeStatus(
+            error instanceof DOMException && error.name === "NotAllowedError"
+              ? "브라우저가 자동 화면 유지를 거부했어요. Safari 설정과 자동 잠금 시간을 확인하세요."
+              : "화면 유지를 시작하지 못했어요. 화면을 다시 열면 자동으로 재시도합니다."
+          );
+        } finally {
+          wakeRequestPending = false;
+        }
+      }
+
+      updateClock();
+
+      if (!wakeLockSupported) {
+        setWakeStatus("이 브라우저에서는 화면 유지를 사용할 수 없어요. 최신 Safari와 보안 연결을 확인하거나 자동 잠금 시간을 조정하세요.");
+      } else if (document.visibilityState === "visible") {
+        setWakeStatus("화면이 꺼지지 않도록 자동으로 유지하고 있어요.");
+        void requestWakeLock();
+      }
+
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          void requestWakeLock();
+        }
+      });
+
+      if (!("serviceWorker" in navigator)) {
+        setWakeStatus("이 브라우저에서는 오프라인 저장을 사용할 수 없어요.");
+      } else if (!window.isSecureContext) {
+        setWakeStatus("오프라인 저장과 화면 유지는 HTTPS 또는 localhost에서 실행해야 해요.");
+      } else {
+        navigator.serviceWorker.register("./sw.js").catch((error) => {
+          console.error("오프라인 저장을 시작하지 못했습니다.", error);
+          setWakeStatus("오프라인 저장을 시작하지 못했어요. 페이지를 다시 열어 주세요.");
+        });
+      }
+    </script>
+  </body>
+</html>
