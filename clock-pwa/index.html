@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#101C2C">
+    <meta name="theme-color" content="#17191a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="밤의 시계">
@@ -19,9 +19,13 @@
         text-rendering: optimizeLegibility;
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
-        --night: #101c2c;
-        --light: #dde7ec;
-        --steel: #8ea2b0;
+        --night: #17191a;
+        --light: #f2e9d5;
+        --steel: #c6bfae;
+        --tile-top: #45433f;
+        --tile-bottom: #302f2c;
+        --tile-edge: #53514a;
+        --accent: #d1a760;
       }
 
       * {
@@ -43,46 +47,75 @@
         min-height: 100svh;
         align-content: center;
         justify-items: center;
+        overflow: hidden;
         padding:
           calc(env(safe-area-inset-top, 0px) + 1.25rem)
-          max(1.4rem, env(safe-area-inset-right, 0px))
+          max(1rem, env(safe-area-inset-right, 0px))
           calc(env(safe-area-inset-bottom, 0px) + 1.25rem)
-          max(1.4rem, env(safe-area-inset-left, 0px));
+          max(1rem, env(safe-area-inset-left, 0px));
       }
 
       .clock-stage {
         display: grid;
         justify-items: center;
-        gap: 1.25rem;
+        gap: clamp(1.5rem, 5vh, 3rem);
+        width: 100%;
         text-align: center;
       }
 
       .calendar-date {
         margin: 0;
         color: var(--steel);
-        font-size: clamp(1rem, 4.2vw, 1.25rem);
-        font-weight: 450;
+        font-size: clamp(0.95rem, 3.8vw, 1.2rem);
+        font-weight: 400;
         letter-spacing: 0.015em;
       }
 
-      .clock-time,
-      .clock-seconds {
-        font-size: clamp(4rem, 20vw, 9rem);
+      .clock-time {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(0.25rem, 1.4vw, 0.75rem);
+        max-width: 100%;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
       }
 
-      .clock-time {
-        font-weight: 360;
-        letter-spacing: -0.075em;
-        line-height: 0.98;
+      .clock-digit {
+        display: grid;
+        width: clamp(2.2rem, 13.2vw, 7.1rem);
+        height: clamp(3.2rem, 21vw, 10rem);
+        place-items: center;
+        border: 1px solid var(--tile-edge);
+        border-radius: clamp(0.18rem, 0.8vw, 0.45rem);
+        background: linear-gradient(
+          to bottom,
+          var(--tile-top) 0 49%,
+          #171819 49% 51%,
+          var(--tile-bottom) 51%
+        );
+        box-shadow: 0 6px 0 #111213, inset 0 0 18px #1116;
+        color: var(--light);
+        font-size: clamp(2rem, 12.8vw, 7rem);
+        font-weight: 450;
+        line-height: 1;
       }
 
-      .time-row {
-        display: flex;
-        align-items: baseline;
-        justify-content: center;
-        max-width: 100%;
+      .clock-separator {
+        color: var(--accent);
+        font-size: clamp(1.5rem, 8vw, 4rem);
+      }
+
+      .screen-reader-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
       }
 
       .screen-reader-status {
@@ -98,9 +131,34 @@
       }
 
       @media (max-height: 560px) and (orientation: landscape) {
-        .clock-time,
-        .clock-seconds {
-          font-size: clamp(4.2rem, 17vw, 7rem);
+        .clock-stage {
+          gap: 1rem;
+        }
+
+        .clock-digit {
+          width: clamp(2.1rem, 10vw, 5.5rem);
+          height: clamp(2.8rem, 25vh, 5rem);
+          font-size: clamp(1.9rem, 9.5vw, 4.6rem);
+        }
+
+        .clock-separator {
+          font-size: clamp(1.5rem, 6vw, 3rem);
+        }
+      }
+
+      @media (max-width: 380px) {
+        .clock-time {
+          gap: 0.15rem;
+        }
+
+        .clock-digit {
+          width: clamp(1.7rem, 11vw, 3.4rem);
+          height: clamp(2.8rem, 18vw, 5rem);
+          font-size: clamp(1.6rem, 10vw, 3rem);
+        }
+
+        .clock-separator {
+          font-size: clamp(1.35rem, 7vw, 2.4rem);
         }
       }
     </style>
@@ -109,19 +167,19 @@
     <div class="clock-app">
       <main class="clock-stage">
         <p class="calendar-date" id="calendar-date"></p>
-        <div class="time-row">
-          <time class="clock-time" id="clock-time"></time>
-          <span class="clock-seconds" id="clock-seconds"></span>
-        </div>
+        <time class="clock-time" id="clock-time" aria-label="">
+          <span class="screen-reader-only" id="clock-time-label"></span>
+        </time>
       </main>
       <p class="screen-reader-status" id="app-status" role="status" aria-live="polite"></p>
     </div>
 
     <script>
       const clockTime = document.querySelector("#clock-time");
-      const clockSeconds = document.querySelector("#clock-seconds");
+      const clockTimeLabel = document.querySelector("#clock-time-label");
       const calendarDate = document.querySelector("#calendar-date");
       const appStatus = document.querySelector("#app-status");
+      const clockSegments = [];
       const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
         hour: "2-digit",
         minute: "2-digit",
@@ -144,8 +202,21 @@
         const now = new Date();
 
         clockTime.dateTime = now.toISOString();
-        clockTime.textContent = timeFormatter.format(now);
-        clockSeconds.textContent = `:${String(now.getSeconds()).padStart(2, "0")}`;
+        const timeText = `${timeFormatter.format(now)}:${String(now.getSeconds()).padStart(2, "0")}`;
+        clockTime.setAttribute("aria-label", timeText);
+        clockTimeLabel.textContent = timeText;
+        if (clockSegments.length === 0) {
+          for (const character of timeText) {
+            const segment = document.createElement("span");
+            segment.className = character === ":" ? "clock-separator" : "clock-digit";
+            segment.setAttribute("aria-hidden", "true");
+            clockTime.append(segment);
+            clockSegments.push(segment);
+          }
+        }
+        clockSegments.forEach((segment, index) => {
+          segment.textContent = timeText[index];
+        });
         calendarDate.textContent = dateFormatter.format(now);
 
         window.setTimeout(updateClock, 1000 - (Date.now() % 1000));
