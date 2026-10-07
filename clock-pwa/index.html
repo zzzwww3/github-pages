@@ -66,7 +66,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: clamp(0.15rem, 0.65vw, 0.65rem);
+        --digit-max-width: calc((100vw - 9rem) / 6);
+        gap: clamp(0.3rem, 1.3vw, 1.3rem);
         max-width: 100%;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
@@ -74,27 +75,27 @@
 
       .clock-digit {
         display: grid;
-        width: clamp(1.45rem, 9.5vw, 9rem);
-        height: clamp(2.8rem, 19vw, 11.5rem);
+        width: min(clamp(2.9rem, 19vw, 18rem), var(--digit-max-width));
+        height: clamp(5.6rem, 38vw, 23rem);
         place-items: center;
-        border: 1px solid var(--tile-edge);
-        border-radius: clamp(0.18rem, 0.8vw, 0.45rem);
+        border: 2px solid var(--tile-edge);
+        border-radius: clamp(0.36rem, 1.6vw, 0.9rem);
         background: linear-gradient(
           to bottom,
           var(--tile-top) 0 49%,
           #171819 49% 51%,
           var(--tile-bottom) 51%
         );
-        box-shadow: 0 6px 0 #111213, inset 0 0 18px #1116;
+        box-shadow: 0 12px 0 #111213, inset 0 0 36px #1116;
         color: var(--light);
-        font-size: clamp(1.35rem, 9vw, 8rem);
+        font-size: min(clamp(2.7rem, 18vw, 16rem), calc(var(--digit-max-width) * 0.85));
         font-weight: 450;
         line-height: 1;
       }
 
       .clock-separator {
         color: var(--accent);
-        font-size: clamp(1.2rem, 5.8vw, 3.6rem);
+        font-size: min(clamp(2.4rem, 11.6vw, 7.2rem), calc(var(--digit-max-width) * 0.85));
       }
 
       .screen-reader-only {
@@ -123,33 +124,34 @@
 
       @media (max-height: 560px) and (orientation: landscape) {
         .clock-stage {
-          gap: 1rem;
+          gap: 2rem;
         }
 
         .clock-digit {
-          width: clamp(1.5rem, 7.8vw, 7rem);
-          height: clamp(2.7rem, 24vh, 6rem);
-          font-size: clamp(1.5rem, 7.3vw, 6.2rem);
+          width: min(clamp(3rem, 15.6vw, 14rem), var(--digit-max-width));
+          height: clamp(5.4rem, 48vh, 12rem);
+          font-size: min(clamp(3rem, 14.6vw, 12.4rem), calc(var(--digit-max-width) * 0.85));
         }
 
         .clock-separator {
-          font-size: clamp(1.3rem, 5vw, 2.8rem);
+          font-size: min(clamp(2.6rem, 10vw, 5.6rem), calc(var(--digit-max-width) * 0.85));
         }
       }
 
       @media (max-width: 380px) {
         .clock-time {
-          gap: 0.1rem;
+          --digit-max-width: calc((100vw - 9rem) / 6);
+          gap: 0.2rem;
         }
 
         .clock-digit {
-          width: clamp(1.3rem, 8vw, 3.1rem);
-          height: clamp(2.4rem, 19vw, 4.8rem);
-          font-size: clamp(1.2rem, 7.6vw, 2.8rem);
+          width: min(clamp(2.6rem, 16vw, 6.2rem), var(--digit-max-width));
+          height: clamp(4.8rem, 38vw, 9.6rem);
+          font-size: min(clamp(2.4rem, 15.2vw, 5.6rem), calc(var(--digit-max-width) * 0.85));
         }
 
         .clock-separator {
-          font-size: clamp(1.15rem, 5.6vw, 1.8rem);
+          font-size: min(clamp(2.3rem, 11.2vw, 3.6rem), calc(var(--digit-max-width) * 0.85));
         }
       }
     </style>
