@@ -21,7 +21,6 @@
         -moz-osx-font-smoothing: grayscale;
         --night: #17191a;
         --light: #f2e9d5;
-        --steel: #c6bfae;
         --tile-top: #45433f;
         --tile-bottom: #302f2c;
         --tile-edge: #53514a;
@@ -63,19 +62,11 @@
         text-align: center;
       }
 
-      .calendar-date {
-        margin: 0;
-        color: var(--steel);
-        font-size: clamp(0.95rem, 3.8vw, 1.2rem);
-        font-weight: 400;
-        letter-spacing: 0.015em;
-      }
-
       .clock-time {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: clamp(0.25rem, 1.4vw, 0.75rem);
+        gap: clamp(0.15rem, 0.65vw, 0.65rem);
         max-width: 100%;
         font-variant-numeric: tabular-nums;
         white-space: nowrap;
@@ -83,8 +74,8 @@
 
       .clock-digit {
         display: grid;
-        width: clamp(2.2rem, 13.2vw, 7.1rem);
-        height: clamp(3.2rem, 21vw, 10rem);
+        width: clamp(1.45rem, 9.5vw, 9rem);
+        height: clamp(2.8rem, 19vw, 11.5rem);
         place-items: center;
         border: 1px solid var(--tile-edge);
         border-radius: clamp(0.18rem, 0.8vw, 0.45rem);
@@ -96,14 +87,14 @@
         );
         box-shadow: 0 6px 0 #111213, inset 0 0 18px #1116;
         color: var(--light);
-        font-size: clamp(2rem, 12.8vw, 7rem);
+        font-size: clamp(1.35rem, 9vw, 8rem);
         font-weight: 450;
         line-height: 1;
       }
 
       .clock-separator {
         color: var(--accent);
-        font-size: clamp(1.5rem, 8vw, 4rem);
+        font-size: clamp(1.2rem, 5.8vw, 3.6rem);
       }
 
       .screen-reader-only {
@@ -136,29 +127,29 @@
         }
 
         .clock-digit {
-          width: clamp(2.1rem, 10vw, 5.5rem);
-          height: clamp(2.8rem, 25vh, 5rem);
-          font-size: clamp(1.9rem, 9.5vw, 4.6rem);
+          width: clamp(1.5rem, 7.8vw, 7rem);
+          height: clamp(2.7rem, 24vh, 6rem);
+          font-size: clamp(1.5rem, 7.3vw, 6.2rem);
         }
 
         .clock-separator {
-          font-size: clamp(1.5rem, 6vw, 3rem);
+          font-size: clamp(1.3rem, 5vw, 2.8rem);
         }
       }
 
       @media (max-width: 380px) {
         .clock-time {
-          gap: 0.15rem;
+          gap: 0.1rem;
         }
 
         .clock-digit {
-          width: clamp(1.7rem, 11vw, 3.4rem);
-          height: clamp(2.8rem, 18vw, 5rem);
-          font-size: clamp(1.6rem, 10vw, 3rem);
+          width: clamp(1.3rem, 8vw, 3.1rem);
+          height: clamp(2.4rem, 19vw, 4.8rem);
+          font-size: clamp(1.2rem, 7.6vw, 2.8rem);
         }
 
         .clock-separator {
-          font-size: clamp(1.35rem, 7vw, 2.4rem);
+          font-size: clamp(1.15rem, 5.6vw, 1.8rem);
         }
       }
     </style>
@@ -166,7 +157,6 @@
   <body>
     <div class="clock-app">
       <main class="clock-stage">
-        <p class="calendar-date" id="calendar-date"></p>
         <time class="clock-time" id="clock-time" aria-label="">
           <span class="screen-reader-only" id="clock-time-label"></span>
         </time>
@@ -177,7 +167,6 @@
     <script>
       const clockTime = document.querySelector("#clock-time");
       const clockTimeLabel = document.querySelector("#clock-time-label");
-      const calendarDate = document.querySelector("#calendar-date");
       const appStatus = document.querySelector("#app-status");
       const clockSegments = [];
       const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
@@ -185,13 +174,6 @@
         minute: "2-digit",
         hourCycle: "h23"
       });
-      const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-        weekday: "long"
-      });
-
       let wakeLock = null;
       const wakeLockSupported = Boolean(navigator.wakeLock?.request);
       let wakeRequestPending = false;
@@ -217,7 +199,6 @@
         clockSegments.forEach((segment, index) => {
           segment.textContent = timeText[index];
         });
-        calendarDate.textContent = dateFormatter.format(now);
 
         window.setTimeout(updateClock, 1000 - (Date.now() % 1000));
       }
